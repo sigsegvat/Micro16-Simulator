@@ -9,7 +9,7 @@ object Micro16SimulatorGUI extends SwingApplication {
 	
 
 	override def startup(args: Array[String]) {
-		val src = if(args.length > 0) args(0) else "micro16-code.txt"
+		var src = "[nofile]"
 			
 		new MainFrame {
 			title = "Micro16 Simulator"
@@ -17,9 +17,15 @@ object Micro16SimulatorGUI extends SwingApplication {
 				val runButton = new Button { text = "Run" }
 				val loadButton = new Button { text = "Load code" }
 				val stepButton = new Button { text = "Step "}
-				val reloadButton = new Button { text = "Reload code" }
-				val textArea =  new TextArea(io.Source.fromFile(src).mkString)
-				val lineNumber = new ListView( (1 to textArea.text.lines.length + 75).map("%02d \n".format(_))) {
+				val openButton = new Button { text = "Load File" }
+				val status = new TextField()
+				
+				var textArea =  new TextArea("")
+				if(args.length > 0){
+					src=args(0)
+					textArea =  new TextArea(io.Source.fromFile(src).mkString)
+				}
+				val lineNumber = new ListView( (1 to textArea.text.lines.length + 25).map("%02d \n".format(_))) {
 					fixedCellHeight = 15
 					font = new Font("Droid Sans Mono Dotted", 0, 12)
 				}
@@ -37,8 +43,9 @@ object Micro16SimulatorGUI extends SwingApplication {
 							)
 						)	
 					}
+					contents += status
 					contents += new BoxPanel(Orientation.Horizontal) {
-						contents += reloadButton
+						contents += openButton
 						contents += loadButton
 						contents += runButton
 						contents += stepButton
@@ -46,7 +53,7 @@ object Micro16SimulatorGUI extends SwingApplication {
 					}
 				}
 
-				listenTo(reloadButton)
+				listenTo(openButton)
 				listenTo(runButton)
 				listenTo(loadButton)
 				listenTo(stepButton)
@@ -61,7 +68,9 @@ object Micro16SimulatorGUI extends SwingApplication {
 
 				reactions += {
 					case ButtonClicked(`loadButton`) => 
-						Micro16Simulator.loadCode(textArea.text)
+						if(!Micro16Simulator.loadCode(textArea.text)){
+							status.text = Micro16Simulator.statusLoad
+						}
 						state.listData = State.dump().split('\n')
 						lineNumber.selectIndices( 0 )
 					case ButtonClicked(`runButton`) =>
@@ -74,12 +83,18 @@ object Micro16SimulatorGUI extends SwingApplication {
 							lineNumber.selectIndices( Micro16Simulator.doStep() )
 							state.listData = State.dump().split('\n')
 						}
-					case ButtonClicked(`reloadButton`) =>
-						textArea.text = io.Source.fromFile(src).mkString
-						Micro16Simulator.loadCode(textArea.text)
-						state.listData = State.dump().split('\n')
-						lineNumber.selectIndices( 0 )
-						lineNumber.listData = (1 to textArea.text.lines.length + 1).map("%02d \n".format(_))
+					case ButtonClicked(`openButton`) =>
+						var chooser = new FileChooser()
+						chooser.showOpenDialog(this)
+						if(chooser.selectedFile != null){
+							src = chooser.selectedFile.toString()
+							textArea.text = io.Source.fromFile(src).mkString
+							Micro16Simulator.loadCode(textArea.text)
+							state.listData = State.dump().split('\n')
+							lineNumber.selectIndices( 0 )
+							lineNumber.listData = (1 to textArea.text.lines.length + 1).map("%02d \n".format(_))
+						
+						}
 					}
 			}
 		}.open()

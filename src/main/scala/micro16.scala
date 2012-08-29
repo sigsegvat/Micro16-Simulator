@@ -145,8 +145,9 @@ object State {
 
 object Micro16Simulator extends Micro16Parser {
 	var codeGraph = new Array[Statement](0)
-
-	def loadCode(code: String) {
+	var statusLoad = ""
+	
+	def loadCode(code: String): Boolean = {
 		State.reset()
 		codeGraph = code.split('\n').zipWithIndex.map( l => {
 			var s = new Statement()
@@ -154,8 +155,8 @@ object Micro16Simulator extends Micro16Parser {
 			try { s = parseAll(statement, line).get }
 			catch {
 				case e: Exception => 
-					println("Parsing line %d failed: %s".format(l._2 + 1, line))
-					e.printStackTrace
+					statusLoad = "Parsing line %d failed: %s".format(l._2 + 1, line)
+					return false
 			}
 			s
 			} ).toArray
@@ -163,6 +164,7 @@ object Micro16Simulator extends Micro16Parser {
 		codeGraph.zipWithIndex.foreach( t => t._1 match { 
 			case s: Label => State.labels(s.name) = t._2.toShort 
 			case _ => } )
+		return true
 	}
 
 	def printCode() {
