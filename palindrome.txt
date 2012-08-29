@@ -9,7 +9,7 @@ R0 <- (-1 + -1)			# mask to zero LSB
  		# copy the 8 leftmost bits to the right, but mirrored
 START:
 (R4); if Z goto END		# repeat 8 times
-R4 <- (R4 + -1G)
+R4 <- (R4 + -1)
 R6 <- (R10 & R1)		# check bit n
 R3 <- lsh(R3)
 R3 <- (R3 & R0)			# left shift and make sure LSB is zero
